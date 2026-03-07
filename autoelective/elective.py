@@ -227,3 +227,22 @@ class ElectiveClient(BaseClient):
             **kwargs,
         )
         return r
+
+    def get_CancelCourse(self, href, **kwargs):
+        """ 退选一门课 """
+
+        if "/supplement/cancelCourse.do" not in href:
+            raise RuntimeError(
+                "If %r is really a 'cancelCourse' href, it would certainly contains '/supplement/cancelCourse.do'. "
+                "If you see this error, that means the cancel link format may have changed ! Please check the elected "
+                "table HTML and raise an issue." % href
+            )
+
+        headers = _get_headers_with_referer(kwargs, ElectiveURL.SupplyCancel)
+        r = self._get(
+            url="%s://%s%s" % (ElectiveURL.Scheme, ElectiveURL.Host, href),
+            headers=headers,
+            hooks=_hooks_check_tips,
+            **kwargs,
+        )
+        return r

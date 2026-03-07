@@ -49,6 +49,9 @@ __all__ = [
     "QuotaLimitedError",
     "MultiPECourseError",
 
+    "CancelSuccess",
+    "CancelFailedError",
+
 ]
 
 
@@ -254,3 +257,13 @@ class QuotaLimitedError(TipsException):
 class MultiPECourseError(TimeoutError):
     code = 332
     desc = "学校规定每学期只能修一门体育课。"
+
+
+class CancelSuccess(TipsException):
+    code = 340
+    desc = "退选课程成功。"
+
+
+class CancelFailedError(TipsException):
+    code = 341
+    desc = "退选操作失败，请稍后再试。"

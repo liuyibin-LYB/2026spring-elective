@@ -16,7 +16,7 @@ identity = bzx
 
 [client]
 
-; supply_cancel_page           int       待刷课程处在 "补退选" 选课计划的第几页
+; supply_cancel_page           string    待刷课程处在 "补退选" 选课计划的第几页，支持多页（用逗号分隔，如 1,2,3）
 ; refresh_interval             float     每次循环后的暂停时间，单位 s
 ; random_deviation             float     偏移量分数，如果设置为 <= 0 的值，则视为 0
 ; iaaa_client_timeout          float     IAAA 客户端最长请求超时
@@ -228,3 +228,43 @@ minimum_interval = -1
 ;
 ; course = course_id_1
 ; threshold = a_positive_int
+
+;---------------- swap -----------------;
+;
+; 换课规则结构定义：
+;
+; [swap:${id}]                    ; 用户为该换课规则定义的 id
+;
+; courses = ${cid1},${cid2},...   ; 用户定义的多个课程的 id，以 ',' 分隔，按优先级从高到低排列
+;
+;
+; 例如：
+;
+; [course:math_1]
+;   ...
+;
+; [course:math_3]
+;   ...
+;
+; [swap:0]
+;
+; courses = math_1,math_3
+;
+;
+; 解释：
+;
+; 同一个换课规则内的课程，如果低优先级的课程已经被选上，但高优先级的课程出现空位，
+; 系统会自动退掉低优先级的课程，并补选高优先级的课程。
+;
+; 注意：
+;
+; 1. [swap:${id}] 的命名注意事项同 course
+; 2. courses 中课程的顺序决定优先级，排在前面的优先级更高
+; 3. 换课规则内的课程也会自动加入互斥关系
+; 4. 请谨慎使用此功能，退选后如果补选失败可能导致课程丢失！
+;
+;---------------------------------------;
+
+; [swap:sample]
+;
+; courses = course_id_1,course_id_2

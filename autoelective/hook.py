@@ -23,6 +23,7 @@ mkdir(_USER_REQUEST_LOG_DIR)
 
 _regexErrorOperatingTime = re.compile(r'目前不是(.*?)时间，因此不能进行相应操作。')
 _regexElectionSuccess    = re.compile(r'补选（或者候补）课程(.*)成功，请查看已选上列表确认，并查看选课结果。')
+_regexCancelSuccess      = re.compile(r'退选(.*)课程成功')
 _regexMutex              = re.compile(r'(.+)与(.+)只能选其一门。')
 
 _DUMMY_HOOK = {"response": []}
@@ -160,7 +161,7 @@ def check_elective_tips(r, **kwargs):
         elif tips.startswith("该课程在补退选阶段开始后的约一周开放选课"): # 这个可能需要根据当学期情况进行修改
             raise ElectionPermissionError(response=r, msg=tips)
 
-        elif tips.startswith("该课程选课人数已满"):
+        elif tips.startswith("该课程选课人数已满") or "人数已满" in tips:
             raise QuotaLimitedError(response=r, msg=tips)
 
         elif tips.startswith("学校规定每学期只能修一门体育课"):
@@ -168,6 +169,9 @@ def check_elective_tips(r, **kwargs):
 
         elif _regexElectionSuccess.search(tips):
             raise ElectionSuccess(response=r, msg=tips)
+
+        elif _regexCancelSuccess.search(tips):
+            raise CancelSuccess(response=r, msg=tips)
 
         elif _regexMutex.search(tips):
             raise MutexCourseError(response=r, msg=tips)

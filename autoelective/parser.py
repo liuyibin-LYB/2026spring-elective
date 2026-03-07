@@ -75,3 +75,25 @@ def get_courses_with_detail(table):
         cs.append(c)
     return cs
 
+
+def get_elected_with_detail(table):
+    """解析已选上列表，提取退选链接"""
+    header = get_table_header(table)
+    trs = get_table_trs(table)
+    # 已选上列表中有"退选"列
+    try:
+        cancel_ix = header.index("退选")
+    except ValueError:
+        # 如果没有"退选"列，返回空列表
+        return []
+    ixs = tuple(map(header.index, ["课程名","班号","开课单位"]))
+    cs = []
+    for tr in trs:
+        t = tr.xpath('./th | ./td')
+        name, class_no, school = map(lambda ix: t[ix].xpath('.//text()')[0], ixs)
+        cancel_hrefs = t[cancel_ix].xpath('./a/@href')
+        cancel_href = cancel_hrefs[0] if cancel_hrefs else None
+        c = Course(name, class_no, school, href=cancel_href)
+        cs.append(c)
+    return cs
+

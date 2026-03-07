@@ -45,7 +45,7 @@ class ConfigManager:
                 # 加载客户端设置
                 if 'client' in config:
                     config_data['client'] = {
-                        'supply_cancel_page': config.getint('client', 'supply_cancel_page', fallback=1),
+                        'supply_cancel_page': config.get('client', 'supply_cancel_page', fallback='1'),
                         'refresh_interval': config.getfloat('client', 'refresh_interval', fallback=1.0),
                         'random_deviation': config.getfloat('client', 'random_deviation', fallback=0.0),
                         'iaaa_client_timeout': config.getfloat('client', 'iaaa_client_timeout', fallback=10.0),
@@ -87,6 +87,7 @@ class ConfigManager:
                 config_data['courses'] = {}
                 config_data['mutex'] = {}
                 config_data['delay'] = {}
+                config_data['swap'] = {}
                 
                 for section in config.sections():
                     if section.startswith('course:'):
@@ -105,6 +106,12 @@ class ConfigManager:
                             'course': config.get(section, 'course', fallback=''),
                             'threshold': config.getint(section, 'threshold', fallback= 10)
                         }
+                    
+                    elif section.startswith('swap:'):
+                        swap_id = section[5:]  # 去掉 'swap:' 前缀
+                        courses = config.get(section, 'courses', fallback='').split(',')
+                        courses = [c.strip() for c in courses if c.strip()]
+                        config_data['swap'][swap_id] = courses
             
             # 加载apikey.json
             apikey_path = os.path.normpath(os.path.abspath(self.apikey_file))
@@ -170,6 +177,13 @@ class ConfigManager:
                     config.add_section(section_name)
                     for key, value in delay_data.items():
                         config.set(section_name, key, str(value))
+            
+            # 保存换课规则配置
+            if 'swap' in config_data:
+                for swap_id, courses in config_data['swap'].items():
+                    section_name = f"swap:{swap_id}"
+                    config.add_section(section_name)
+                    config.set(section_name, 'courses', ', '.join(courses))
             
             # 使用解析后的配置文件路径
             config_path = os.path.normpath(os.path.abspath(self.config_file))

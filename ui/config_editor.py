@@ -324,9 +324,10 @@ class ConfigEditor(QWidget):
         clear_btn.setToolTip("清空所有课程、互斥规则和延迟规则")
         clear_btn.clicked.connect(self.clear_all_course_configs)
 
-        # 补退选页数选项卡
-        self.supply_cancel_page_spin = MQSpinBox()
-        self.supply_cancel_page_spin.setRange(1, 100)
+        # 补退选页数选项卡（支持多页，用逗号分隔）
+        self.supply_cancel_page_edit = MQLineEdit()
+        self.supply_cancel_page_edit.setPlaceholderText("如 1 或 1,2,3")
+        self.supply_cancel_page_edit.setMaximumWidth(120)
 
         # 选课身份选项卡
         self.identity_radio_option_no = QRadioButton("不是双学位账号")
@@ -383,8 +384,8 @@ class ConfigEditor(QWidget):
         self.top_widget_course_setting.setObjectName("top_widget_setting")
         top_layout_course_setting = QHBoxLayout()
         top_layout_course_setting.addWidget(QLabel("待选课程在补退选页面中的第"))
-        top_layout_course_setting.addWidget(self.supply_cancel_page_spin)
-        top_layout_course_setting.addWidget(QLabel("页"))
+        top_layout_course_setting.addWidget(self.supply_cancel_page_edit)
+        top_layout_course_setting.addWidget(QLabel("页（多页用逗号分隔）"))
         top_layout_course_setting.addWidget(QLabel())
         top_layout_course_setting.addWidget(add_course_btn)
         top_layout_course_setting.addWidget(fast_add_course_btn)
@@ -498,8 +499,8 @@ class ConfigEditor(QWidget):
             # 加载客户端设置
             if 'client' in config_data:
                 client_data = config_data['client']
-                self.supply_cancel_page_spin.setValue(
-                    client_data.get('supply_cancel_page', 1))
+                self.supply_cancel_page_edit.setText(
+                    str(client_data.get('supply_cancel_page', '1')))
                 self.refresh_interval_spin.setValue(
                     client_data.get('refresh_interval', 1.0))
                 self.refresh_random_deviation_spin.setValue(
@@ -589,7 +590,7 @@ class ConfigEditor(QWidget):
             self.save_non_course_configs)
 
         # 客户端设置
-        self.supply_cancel_page_spin.valueChanged.connect(
+        self.supply_cancel_page_edit.textChanged.connect(
             self.save_non_course_configs)
         self.refresh_interval_spin.valueChanged.connect(
             self.save_non_course_configs)
@@ -723,7 +724,7 @@ class ConfigEditor(QWidget):
 
     def get_client_config(self):
         return {
-            'supply_cancel_page': self.supply_cancel_page_spin.value(),
+            'supply_cancel_page': self.supply_cancel_page_edit.text().strip() or '1',
             'refresh_interval': self.refresh_interval_spin.value(),
             'random_deviation': self.refresh_random_deviation_spin.value(),
             'iaaa_client_timeout': self.iaaa_timeout_spin.value(),

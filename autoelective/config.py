@@ -12,7 +12,7 @@ from configparser import RawConfigParser, DuplicateSectionError
 from collections import OrderedDict
 from .environ import Environ
 from .course import Course
-from .rule import Mutex, Delay
+from .rule import Mutex, Delay, Swap
 from .utils import Singleton
 from .const import DEFAULT_CONFIG_INI
 from .exceptions import UserInputException
@@ -101,7 +101,7 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
         self._identity = self.get("user", "identity").lower()
         
         # [client] 部分
-        self._supply_cancel_page = self.getint("client", "supply_cancel_page")
+        self._supply_cancel_pages = self._parse_pages(self.get("client", "supply_cancel_page"))
         self._refresh_interval = self.getfloat("client", "refresh_interval")
         self._refresh_random_deviation = self.getfloat("client", "random_deviation")
         self._iaaa_client_timeout = self.getfloat("client", "iaaa_client_timeout")
@@ -131,6 +131,9 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
         
         # [delay] 部分 - 动态属性
         self._delays = self._load_delays()
+        
+        # [swap] 部分 - 动态属性
+        self._swaps = self._load_swaps()
     
     ## 动态属性加载方法
     
@@ -170,6 +173,13 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
             ds[id_] = Delay(cid, threshold)
         return ds
 
+    def _load_swaps(self):
+        ss = OrderedDict()  # { id: Swap }
+        for id_, s in self.ns_sections('swap'):
+            lst = self.getlist(s, 'courses')
+            ss[id_] = Swap(lst)
+        return ss
+
     ## Property Getters
 
     @property
@@ -190,7 +200,13 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
 
     @property
     def supply_cancel_page(self):
-        return self._supply_cancel_page
+        """兼容旧接口，返回第一个页码"""
+        return self._supply_cancel_pages[0]
+
+    @property
+    def supply_cancel_pages(self):
+        """返回所有页码列表"""
+        return self._supply_cancel_pages
 
     @property
     def refresh_interval(self):
@@ -268,6 +284,10 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
     def delays(self):
         return self._delays
 
+    @property
+    def swaps(self):
+        return self._swaps
+
     ## Method
 
     def check_identify(self, identity):
@@ -275,9 +295,29 @@ class AutoElectiveConfig(BaseConfig, metaclass=Singleton):
         if identity not in limited:
             raise ValueError("unsupported identity %s for elective, identity must be in %s" % (identity, limited))
 
-    def check_supply_cancel_page(self, page):
-        if page <= 0:
-            raise ValueError("supply_cancel_page must be positive number, not %s" % page)
+    def check_supply_cancel_page(self, pages):
+        """验证页码，支持单个整数或列表"""
+        if isinstance(pages, (list, tuple)):
+            for p in pages:
+                if p <= 0:
+                    raise ValueError("supply_cancel_page must be positive number, not %s" % p)
+        else:
+            if pages <= 0:
+                raise ValueError("supply_cancel_page must be positive number, not %s" % pages)
+
+    @staticmethod
+    def _parse_pages(value):
+        """解析页码配置，支持逗号分隔的多页码格式，如 '1,2,3'"""
+        pages = []
+        for part in value.split(','):
+            part = part.strip()
+            if part:
+                p = int(part)
+                if p not in pages:
+                    pages.append(p)
+        if not pages:
+            raise ValueError("supply_cancel_page must have at least one valid page number")
+        return pages
 
     def get_user_subpath(self):
         if self.is_dual_degree:

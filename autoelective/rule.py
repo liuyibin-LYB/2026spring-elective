@@ -32,3 +32,16 @@ class Delay(object):
     def threshold(self):
         return self._threshold
 
+
+class Swap(object):
+    """换课规则：同组课程按优先级排列，当高优先级课程有空位时，自动退掉已选的低优先级课程并补选高优先级课程"""
+
+    __slots__ = ["_cids",]
+
+    def __init__(self, cids):
+        self._cids = cids
+
+    @property
+    def cids(self):
+        return self._cids
+
